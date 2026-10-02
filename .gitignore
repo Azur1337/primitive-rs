@@ -1,0 +1,9 @@
+/target
+/primitive
+/.freetype-ref
+/.ximage-ref
+/.gg-ref
+/.gobin
+/.gocache
+/.gomodcache
+/.gopath
