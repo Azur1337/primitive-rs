@@ -3,6 +3,7 @@
 //! Reproduce images with geometric primitives.
 
 pub mod color;
+pub mod core;
 pub mod heatmap;
 pub mod log;
 pub mod scanline;
