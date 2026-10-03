@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>primitive · reproduce images with shapes</title>
+        <style>
+            @font-face {
+                font-family: "Geist";
+                src: url("/fonts/GeistSans.latin.woff2") format("woff2");
+                font-weight: 100 900;
+                font-display: swap;
+            }
+            @font-face {
+                font-family: "Geist Mono";
+                src: url("/fonts/GeistMono.latin.woff2") format("woff2");
+                font-weight: 100 900;
+                font-display: swap;
+            }
+            :root {
+                color-scheme: dark;
+                --off-white: #f1eee7;
+                --ink: #232323;
+                --deep: #000;
+                --dark-grey: #5b5a56;
+                --mid-grey: #cbcbcb;
+                --ghost-grey: #dedede;
+                --accent: #ae8963;
+                --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+                --font-mono:
+                    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+                /* translucent whites on the dark terminal chrome */
+                --w-04: rgba(255, 255, 255, 0.04);
+                --w-06: rgba(255, 255, 255, 0.06);
+                --w-10: rgba(255, 255, 255, 0.1);
+                --w-15: rgba(255, 255, 255, 0.15);
+                --w-40: rgba(255, 255, 255, 0.4);
+                --w-55: rgba(255, 255, 255, 0.55);
+                --w-70: rgba(255, 255, 255, 0.7);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+            }
+            body {
+                background: var(--off-white);
+                color: var(--ink);
+                font-family: var(--font-sans);
+                -webkit-font-smoothing: antialiased;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            ::selection {
+                background: var(--accent);
+                color: #fff;
+            }
+
+            .wrap {
+                width: 100%;
+                max-width: 1120px;
+                margin: 0 auto;
+                padding: 24px 20px 56px;
+            }
+
+            /* page header: mono, muted, like the site's terminal feel */
+            .page-head {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 16px;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+            }
+            .page-head h1 {
+                margin: 0;
+                font-family: var(--font-mono);
+                font-size: 13px;
+                font-weight: 500;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: var(--ink);
+            }
+            .page-head .sub {
+                font-size: 14px;
+                color: var(--dark-grey);
+            }
+            .page-head a {
+                font-family: var(--font-mono);
+                font-size: 12px;
+                color: var(--dark-grey);
+                text-decoration: none;
+                border-bottom: 1px solid var(--mid-grey);
+            }
+            .page-head a:hover {
+                color: var(--accent);
+                border-color: var(--accent);
+            }
+
+            /* the terminal panel */
+            .term {
+                background: var(--ink);
+                color: #fff;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow:
+                    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+                    0 24px 60px -30px rgba(0, 0, 0, 0.6);
+                outline: 1px solid var(--w-10);
+                outline-offset: -1px;
+            }
+            .term__bar {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--w-06);
+                background: var(--w-04);
+                font-family: var(--font-mono);
+                font-size: 12px;
+                color: var(--w-40);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .dots {
+                display: flex;
+                gap: 7px;
+            }
+            .dots i {
+                width: 11px;
+                height: 11px;
+                border-radius: 50%;
+                display: block;
+            }
+            .dots i:nth-child(1) {
+                background: #ff5f57;
+            }
+            .dots i:nth-child(2) {
+                background: #febc2e;
+            }
+            .dots i:nth-child(3) {
+                background: #28c840;
+            }
+            .term__title {
+                margin: 0 auto;
+                padding-right: 60px; /* visually recenter past the dots */
+            }
+
+            .term__body {
+                display: grid;
+                grid-template-columns: 320px 1fr;
+                gap: 24px;
+                padding: 24px;
+            }
+            @media (max-width: 860px) {
+                .term__body {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* controls */
+            .controls {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .field-label {
+                display: block;
+                font-family: var(--font-mono);
+                font-size: 11px;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--w-40);
+                margin-bottom: 7px;
+            }
+
+            /* custom file drop-zone (replaces the ugly native input) */
+            .drop {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                text-align: center;
+                padding: 26px 16px;
+                border: 1px dashed var(--w-15);
+                background: var(--w-04);
+                border-radius: 6px;
+                cursor: pointer;
+                transition:
+                    border-color 0.15s,
+                    background 0.15s;
+                font-family: var(--font-mono);
+                font-size: 13px;
+                color: var(--w-55);
+            }
+            .drop:hover {
+                border-color: var(--w-40);
+                color: #fff;
+            }
+            .drop.drag {
+                border-color: var(--accent);
+                background: rgba(174, 137, 99, 0.12);
+                color: #fff;
+            }
+            .drop svg {
+                width: 22px;
+                height: 22px;
+                stroke: var(--accent);
+            }
+            .drop .name {
+                color: var(--accent);
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .drop input[type="file"] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+            }
+
+            /* select + number inputs */
+            .select {
+                position: relative;
+            }
+            .select::after {
+                content: "▾";
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                pointer-events: none;
+                color: var(--w-40);
+                font-family: var(--font-mono);
+                font-size: 12px;
+            }
+            select,
+            input[type="number"] {
+                width: 100%;
+                -webkit-appearance: none;
+                appearance: none;
+                background: var(--w-04);
+                border: 1px solid var(--w-10);
+                color: #fff;
+                border-radius: 4px;
+                padding: 9px 12px;
+                font-family: var(--font-mono);
+                font-size: 13px;
+            }
+            select {
+                padding-right: 30px;
+            }
+            select:focus,
+            input:focus {
+                outline: none;
+                border-color: var(--accent);
+            }
+            .row {
+                display: flex;
+                gap: 12px;
+            }
+            .row > div {
+                flex: 1;
+            }
+
+            /* range slider */
+            .range-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+            }
+            .range-val {
+                font-family: var(--font-mono);
+                font-size: 12px;
+                color: var(--accent);
+            }
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 2px;
+                background: var(--w-15);
+                border-radius: 2px;
+                margin: 10px 0;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: var(--accent);
+                border: 2px solid var(--ink);
+                cursor: pointer;
+            }
+            input[type="range"]::-moz-range-thumb {
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: var(--accent);
+                border: 2px solid var(--ink);
+                cursor: pointer;
+            }
+
+            /* primary button: filled copper, mono, uppercase */
+            .btn {
+                width: 100%;
+                background: var(--accent);
+                color: #1c1c1c;
+                border: 0;
+                border-radius: 4px;
+                padding: 12px 14px;
+                font-family: var(--font-mono);
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                cursor: pointer;
+                transition: filter 0.15s;
+            }
+            .btn:hover:not(:disabled) {
+                filter: brightness(1.08);
+            }
+            .btn:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+
+            /* status line: prompt + message + blinking block cursor */
+            .status {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-family: var(--font-mono);
+                font-size: 12px;
+                color: var(--w-55);
+                min-height: 18px;
+            }
+            .status .prompt {
+                color: var(--accent);
+                white-space: nowrap;
+            }
+            .cursor {
+                display: inline-block;
+                width: 7px;
+                height: 14px;
+                background: var(--accent);
+                animation: blink 1.1s step-end infinite;
+            }
+            @keyframes blink {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .cursor {
+                    animation: none;
+                }
+            }
+            .dl {
+                font-family: var(--font-mono);
+                font-size: 12px;
+                color: var(--accent);
+                text-decoration: none;
+                border-bottom: 1px solid transparent;
+                width: fit-content;
+            }
+            .dl:hover {
+                border-color: var(--accent);
+            }
+
+            /* output stage */
+            .stage {
+                background: var(--deep);
+                border: 1px solid var(--w-06);
+                border-radius: 6px;
+                min-height: 460px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 16px;
+                overflow: hidden;
+            }
+            #stage {
+                width: 100%;
+            }
+            #stage svg {
+                width: 100%;
+                height: auto;
+                max-height: 72vh;
+                display: block;
+                border-radius: 3px;
+            }
+            .placeholder {
+                font-family: var(--font-mono);
+                font-size: 13px;
+                color: var(--dark-grey);
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <div class="page-head">
+                <h1>primitive</h1>
+                <span class="sub"
+                    >Reproduce a picture with geometric primitives, one shape at
+                    a time.</span
+                >
+                <a href="https://0x187.dev">azur ↗</a>
+            </div>
+
+            <div class="term">
+                <div class="term__bar">
+                    <span class="dots"><i></i><i></i><i></i></span>
+                    <span class="term__title">primitive — watch it draw</span>
+                </div>
+
+                <div class="term__body">
+                    <form id="form" class="controls">
+                        <label class="drop" id="drop">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke-width="1.6"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M12 16V4" />
+                                <path d="m7 9 5-5 5 5" />
+                                <path
+                                    d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                                />
+                            </svg>
+                            <span id="dropText"
+                                >drop an image or click to browse</span
+                            >
+                            <span class="name" id="fileName"></span>
+                            <input
+                                id="file"
+                                name="file"
+                                type="file"
+                                accept="image/*"
+                            />
+                        </label>
+
+                        <div>
+                            <label class="field-label" for="mode"
+                                >Shape mode</label
+                            >
+                            <div class="select">
+                                <select id="mode" name="mode">
+                                    <option value="1" selected>
+                                        Triangles
+                                    </option>
+                                    <option value="0">Combo (any)</option>
+                                    <option value="2">Rectangles</option>
+                                    <option value="3">Ellipses</option>
+                                    <option value="4">Circles</option>
+                                    <option value="5">
+                                        Rotated rectangles
+                                    </option>
+                                    <option value="6">Beziers</option>
+                                    <option value="7">Rotated ellipses</option>
+                                    <option value="8">Polygons</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="range-head">
+                                <label class="field-label" for="count"
+                                    >Shapes</label
+                                >
+                                <span class="range-val" id="countLabel"
+                                    >100</span
+                                >
+                            </div>
+                            <input
+                                id="count"
+                                name="count"
+                                type="range"
+                                min="10"
+                                max="400"
+                                step="10"
+                                value="100"
+                            />
+                        </div>
+
+                        <div class="row">
+                            <div>
+                                <label class="field-label" for="alpha"
+                                    >Alpha</label
+                                >
+                                <input
+                                    id="alpha"
+                                    name="alpha"
+                                    type="number"
+                                    min="0"
+                                    max="255"
+                                    value="128"
+                                />
+                            </div>
+                            <div>
+                                <label class="field-label" for="size"
+                                    >Output size</label
+                                >
+                                <input
+                                    id="size"
+                                    name="size"
+                                    type="number"
+                                    min="64"
+                                    max="1024"
+                                    step="64"
+                                    value="1024"
+                                />
+                            </div>
+                        </div>
+
+                        <button id="go" class="btn" type="submit">
+                            Generate
+                        </button>
+
+                        <div class="status">
+                            <span class="prompt">azur@primitive:~$</span>
+                            <span id="status">ready</span>
+                            <span class="cursor" aria-hidden="true"></span>
+                        </div>
+                        <a
+                            id="download"
+                            class="dl"
+                            style="display: none"
+                            download="primitive.svg"
+                            >↓ download svg</a
+                        >
+                    </form>
+
+                    <section class="stage">
+                        <div id="stage">
+                            <div class="placeholder">
+                                your drawing will appear here
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const form = document.getElementById("form");
+            const go = document.getElementById("go");
+            const statusEl = document.getElementById("status");
+            const stage = document.getElementById("stage");
+            const download = document.getElementById("download");
+            const countInput = document.getElementById("count");
+            const countLabel = document.getElementById("countLabel");
+            const fileInput = document.getElementById("file");
+            const drop = document.getElementById("drop");
+            const dropText = document.getElementById("dropText");
+            const fileName = document.getElementById("fileName");
+
+            countInput.addEventListener(
+                "input",
+                () => (countLabel.textContent = countInput.value),
+            );
+
+            function showFile() {
+                const f = fileInput.files[0];
+                if (f) {
+                    fileName.textContent = f.name;
+                    dropText.textContent = "replace image";
+                }
+            }
+            fileInput.addEventListener("change", showFile);
+            ["dragenter", "dragover"].forEach((ev) =>
+                drop.addEventListener(ev, (e) => {
+                    e.preventDefault();
+                    drop.classList.add("drag");
+                }),
+            );
+            ["dragleave", "drop"].forEach((ev) =>
+                drop.addEventListener(ev, (e) => {
+                    e.preventDefault();
+                    drop.classList.remove("drag");
+                }),
+            );
+            drop.addEventListener("drop", (e) => {
+                if (e.dataTransfer.files && e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    showFile();
+                }
+            });
+
+            let es = null;
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                if (es) {
+                    es.close();
+                    es = null;
+                }
+
+                if (!fileInput.files[0]) {
+                    statusEl.textContent = "choose an image first";
+                    return;
+                }
+
+                go.disabled = true;
+                download.style.display = "none";
+                stage.innerHTML = '<div class="placeholder">starting…</div>';
+                statusEl.textContent = "uploading…";
+
+                const fd = new FormData(form);
+                let id;
+                try {
+                    const res = await fetch("/jobs", {
+                        method: "POST",
+                        body: fd,
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+                    id = (await res.json()).id;
+                } catch (err) {
+                    statusEl.textContent = "error: " + err.message;
+                    go.disabled = false;
+                    return;
+                }
+
+                statusEl.textContent = "drawing…";
+                let n = 0;
+                es = new EventSource("/jobs/" + id + "/events");
+                es.addEventListener("frame", (ev) => {
+                    const frame = JSON.parse(ev.data);
+                    if (frame.svg) stage.innerHTML = frame.svg;
+                    n++;
+                    statusEl.textContent =
+                        "shape " + n + (frame.done ? " — done" : "");
+                    if (frame.done) {
+                        es.close();
+                        es = null;
+                        go.disabled = false;
+                        const blob = new Blob([frame.svg], {
+                            type: "image/svg+xml",
+                        });
+                        download.href = URL.createObjectURL(blob);
+                        download.style.display = "inline-block";
+                    }
+                });
+                es.onerror = () => {
+                    if (es) {
+                        es.close();
+                        es = null;
+                    }
+                    go.disabled = false;
+                    statusEl.textContent = "stream ended";
+                };
+            });
+        </script>
+    </body>
+</html>

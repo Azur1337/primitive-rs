@@ -13,12 +13,31 @@ path = "src/lib.rs"
 name = "primitive"
 path = "src/main.rs"
 
+[[bin]]
+name = "primitive-web"
+path = "src/web.rs"
+required-features = ["web"]
+
 [dependencies]
+# Raster I/O: PNG / JPEG / GIF decode + encode, and imageops::resize.
 image = "0.25"
+# Randomness: per-worker StdRng + Normal distribution (Go's rand.NormFloat64).
 rand = "0.8"
 rand_distr = "0.4"
+# Command-line interface, mirroring the Go flag package.
 clap = { version = "4", features = ["derive"] }
+# Data-parallel workers (Go's one-goroutine-per-worker).
 rayon = "1.10"
+
+# Web demo (opt-in via the `web` feature): progressive "watch it draw" server.
+axum = { version = "0.7", features = ["multipart"], optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"], optional = true }
+futures = { version = "0.3", optional = true }
+serde_json = { version = "1", optional = true }
+
+[features]
+default = []
+web = ["dep:axum", "dep:tokio", "dep:futures", "dep:serde_json"]
 
 [profile.release]
 opt-level = 3
