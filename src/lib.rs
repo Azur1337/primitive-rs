@@ -8,6 +8,7 @@ pub mod core;
 pub mod ellipse;
 pub mod heatmap;
 pub mod log;
+pub mod model;
 pub mod optimize;
 pub mod polygon;
 pub mod quadratic;
