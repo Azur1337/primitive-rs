@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+output*.png
+out_*.png
+*.gif
+.git

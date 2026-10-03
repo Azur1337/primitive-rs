@@ -1,0 +1,12 @@
+services:
+  primitive-web:
+    build: .
+    image: primitive-web
+    container_name: primitive-web
+    ports:
+      - "6123:6123"
+    restart: unless-stopped
+    # Cap the parallel workers a run may use (default: every core). Lower this
+    # to leave headroom for other services on a shared box, e.g. "2".
+    # environment:
+    #   - PRIMITIVE_WORKERS=2
